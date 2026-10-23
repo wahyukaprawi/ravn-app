@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +18,7 @@ class AppRouter {
   static GoRouter createRouter(AuthCubit authCubit) {
     return GoRouter(
       initialLocation: '/splash',
+      refreshListenable: _AuthRouterRefresh(authCubit.stream),
       redirect: (context, state) {
         final authState = authCubit.state;
         final isLoggingIn = state.matchedLocation == '/login';
@@ -74,6 +77,20 @@ class AppRouter {
         ),
       ],
     );
+  }
+}
+
+class _AuthRouterRefresh extends ChangeNotifier {
+  _AuthRouterRefresh(Stream<AuthState> stream) {
+    _subscription = stream.listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<AuthState> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
   }
 }
 
