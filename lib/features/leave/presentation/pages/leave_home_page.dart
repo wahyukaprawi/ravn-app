@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:heroicons_flutter/heroicons_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/status_chip.dart';
@@ -39,6 +40,11 @@ class _LeaveHomePageState extends State<LeaveHomePage>
       appBar: AppBar(
         title: const Text('Leave'),
         actions: [
+          IconButton(
+            icon: const Icon(HeroiconsOutline.clock),
+            tooltip: 'Attendance',
+            onPressed: () => context.push('/attendance'),
+          ),
           IconButton(
             icon: const Icon(HeroiconsOutline.inbox),
             onPressed: () {

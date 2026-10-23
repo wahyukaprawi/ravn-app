@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/auth/presentation/pages/login_page.dart';
+import '../features/attendance/presentation/pages/attendance_page.dart';
 import '../features/leave/presentation/pages/leave_home_page.dart';
 
 class AppRouter {
@@ -39,6 +40,10 @@ class AppRouter {
         GoRoute(
           path: '/home',
           builder: (context, state) => const LeaveHomePage(),
+        ),
+        GoRoute(
+          path: '/attendance',
+          builder: (context, state) => const AttendancePage(),
         ),
       ],
     );

@@ -10,6 +10,10 @@ class AppConfig {
     return ApiConstants.baseUrl;
   }
 
+  static const bool syntheticFaceVerification = bool.fromEnvironment(
+    'RAVN_SYNTHETIC_FACE_VERIFICATION',
+  );
+
   static const String appName = 'Ravn HRMS';
   static const String version = '1.0.0';
 }

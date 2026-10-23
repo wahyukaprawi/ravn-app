@@ -12,6 +12,12 @@ class ApiConstants {
   static const String me = '/me';
   static const String sessions = '/me/sessions';
 
+  static const String attendanceStatus = '/attendance/status';
+  static const String attendanceHistory = '/attendance/history';
+  static const String attendanceChallenges = '/attendance/challenges';
+  static const String attendanceCheckIn = '/attendance/check-in';
+  static const String attendanceCheckOut = '/attendance/check-out';
+
   static const String leaveTypes = '/leave/types';
   static const String leaveBalances = '/leave/balances';
   static const String leaveRequests = '/leave/requests';

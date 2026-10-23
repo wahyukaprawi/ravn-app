@@ -2,6 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import '../network/dio_client.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
+import '../../features/attendance/data/datasources/attendance_remote_datasource.dart';
+import '../../features/attendance/domain/attendance_location_service.dart';
+import '../../features/attendance/domain/device_identity_service.dart';
+import '../../features/attendance/domain/face_verification_service.dart';
 import '../../features/leave/data/datasources/leave_remote_datasource.dart';
 
 final getIt = GetIt.instance;
@@ -14,5 +18,17 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<LeaveRemoteDataSource>(
     () => LeaveRemoteDataSource(getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<AttendanceRemoteDataSource>(
+    () => AttendanceRemoteDataSource(getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<AttendanceLocationService>(
+    () => GeolocatorAttendanceLocationService(),
+  );
+  getIt.registerLazySingleton<FaceVerificationService>(
+    () => BuildConfiguredFaceVerificationService(),
+  );
+  getIt.registerLazySingleton<DeviceIdentityService>(
+    () => SecureDeviceIdentityService(),
   );
 }
