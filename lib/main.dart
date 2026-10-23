@@ -11,6 +11,10 @@ import 'features/attendance/domain/attendance_location_service.dart';
 import 'features/attendance/domain/device_identity_service.dart';
 import 'features/attendance/domain/face_verification_service.dart';
 import 'features/attendance/presentation/cubit/attendance_cubit.dart';
+import 'features/announcements/data/datasources/announcement_remote_datasource.dart';
+import 'features/announcements/presentation/cubit/announcement_cubit.dart';
+import 'features/notifications/data/datasources/notification_remote_datasource.dart';
+import 'features/notifications/presentation/cubit/notification_cubit.dart';
 import 'router/app_router.dart';
 
 void main() async {
@@ -27,6 +31,8 @@ class MyApp extends StatelessWidget {
     final authDataSource = getIt<AuthRemoteDataSource>();
     final leaveDataSource = getIt<LeaveRemoteDataSource>();
     final attendanceDataSource = getIt<AttendanceRemoteDataSource>();
+    final announcementDataSource = getIt<AnnouncementRemoteDataSource>();
+    final notificationDataSource = getIt<NotificationRemoteDataSource>();
 
     final authCubit = AuthCubit(authDataSource);
 
@@ -44,15 +50,29 @@ class MyApp extends StatelessWidget {
             getIt<DeviceIdentityService>(),
           ),
         ),
+        BlocProvider<AnnouncementCubit>(
+          create: (context) => AnnouncementCubit(announcementDataSource),
+        ),
+        BlocProvider<NotificationCubit>(
+          create: (context) => NotificationCubit(notificationDataSource),
+        ),
       ],
       child: Builder(
         builder: (context) {
           final router = AppRouter.createRouter(context.read<AuthCubit>());
-          return MaterialApp.router(
-            title: 'Ravn HRMS',
-            theme: AppTheme.lightTheme,
-            routerConfig: router,
-            debugShowCheckedModeBanner: false,
+          return BlocListener<AuthCubit, AuthState>(
+            listener: (context, state) {
+              if (state is AuthUnauthenticated) {
+                context.read<AnnouncementCubit>().clear();
+                context.read<NotificationCubit>().clear();
+              }
+            },
+            child: MaterialApp.router(
+              title: 'Ravn HRMS',
+              theme: AppTheme.lightTheme,
+              routerConfig: router,
+              debugShowCheckedModeBanner: false,
+            ),
           );
         },
       ),

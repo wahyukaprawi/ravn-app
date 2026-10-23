@@ -6,7 +6,9 @@ import '../../features/attendance/data/datasources/attendance_remote_datasource.
 import '../../features/attendance/domain/attendance_location_service.dart';
 import '../../features/attendance/domain/device_identity_service.dart';
 import '../../features/attendance/domain/face_verification_service.dart';
+import '../../features/announcements/data/datasources/announcement_remote_datasource.dart';
 import '../../features/leave/data/datasources/leave_remote_datasource.dart';
+import '../../features/notifications/data/datasources/notification_remote_datasource.dart';
 
 final getIt = GetIt.instance;
 
@@ -21,6 +23,12 @@ Future<void> configureDependencies() async {
   );
   getIt.registerLazySingleton<AttendanceRemoteDataSource>(
     () => AttendanceRemoteDataSource(getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<AnnouncementRemoteDataSource>(
+    () => AnnouncementRemoteDataSource(getIt<Dio>()),
+  );
+  getIt.registerLazySingleton<NotificationRemoteDataSource>(
+    () => NotificationRemoteDataSource(getIt<Dio>()),
   );
   getIt.registerLazySingleton<AttendanceLocationService>(
     () => GeolocatorAttendanceLocationService(),

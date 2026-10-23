@@ -24,6 +24,9 @@ class ApiConstants {
   static const String leaveApprovals = '/leave/approvals';
   static const String leaveCancellations = '/leave/cancellations';
 
+  static const String announcements = '/announcements';
+  static const String notifications = '/notifications';
+
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 }

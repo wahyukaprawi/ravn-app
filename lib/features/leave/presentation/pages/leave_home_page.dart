@@ -5,6 +5,7 @@ import 'package:heroicons_flutter/heroicons_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../notifications/presentation/cubit/notification_cubit.dart';
 import '../cubit/leave_cubit.dart';
 import 'leave_submit_page.dart';
 import 'leave_detail_page.dart';
@@ -26,12 +27,56 @@ class _LeaveHomePageState extends State<LeaveHomePage>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     context.read<LeaveCubit>().loadLeaveData();
+    context.read<NotificationCubit>().load();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleMenuAction(String action) async {
+    switch (action) {
+      case 'attendance':
+        await context.push('/attendance');
+        return;
+      case 'approvals':
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ApprovalsPage()),
+        );
+        return;
+      case 'refresh':
+        await context.read<LeaveCubit>().loadLeaveData();
+        return;
+      case 'signOut':
+        await _confirmSignOut();
+        return;
+    }
+  }
+
+  Future<void> _confirmSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sign out?'),
+        content: const Text('Your session token will be revoked.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Back'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Sign out'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    await context.read<AuthCubit>().logout();
   }
 
   @override
@@ -41,50 +86,73 @@ class _LeaveHomePageState extends State<LeaveHomePage>
         title: const Text('Leave'),
         actions: [
           IconButton(
-            icon: const Icon(HeroiconsOutline.clock),
-            tooltip: 'Attendance',
-            onPressed: () => context.push('/attendance'),
+            icon: const Icon(HeroiconsOutline.megaphone),
+            tooltip: 'Announcements',
+            onPressed: () => context.push('/announcements'),
           ),
-          IconButton(
-            icon: const Icon(HeroiconsOutline.inbox),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ApprovalsPage()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              context.read<LeaveCubit>().loadLeaveData();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-            onPressed: () async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (dialogContext) => AlertDialog(
-                  title: const Text('Sign out?'),
-                  content: const Text('Your session token will be revoked.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(dialogContext, false),
-                      child: const Text('Back'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(dialogContext, true),
-                      child: const Text('Sign out'),
-                    ),
-                  ],
+          BlocBuilder<NotificationCubit, NotificationState>(
+            builder: (context, state) {
+              final unread = state is NotificationLoaded
+                  ? state.unreadCount
+                  : 0;
+              return IconButton(
+                tooltip: 'Notifications',
+                onPressed: () => context.push('/notifications'),
+                icon: Badge(
+                  isLabelVisible: unread > 0,
+                  label: Text(unread > 99 ? '99+' : '$unread'),
+                  child: const Icon(HeroiconsOutline.bell),
                 ),
               );
-
-              if (confirmed != true || !context.mounted) return;
-              await context.read<AuthCubit>().logout();
             },
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            onSelected: (value) {
+              _handleMenuAction(value);
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'attendance',
+                child: Row(
+                  children: [
+                    Icon(HeroiconsOutline.clock),
+                    SizedBox(width: 12),
+                    Text('Attendance'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'approvals',
+                child: Row(
+                  children: [
+                    Icon(HeroiconsOutline.inbox),
+                    SizedBox(width: 12),
+                    Text('Approvals'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh),
+                    SizedBox(width: 12),
+                    Text('Refresh'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'signOut',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout),
+                    SizedBox(width: 12),
+                    Text('Sign out'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
         bottom: TabBar(

@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import '../core/di/injection.dart';
+import '../features/announcements/data/datasources/announcement_remote_datasource.dart';
+import '../features/announcements/presentation/cubit/announcement_detail_cubit.dart';
+import '../features/announcements/presentation/pages/announcement_detail_page.dart';
+import '../features/announcements/presentation/pages/announcements_page.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/attendance/presentation/pages/attendance_page.dart';
 import '../features/leave/presentation/pages/leave_home_page.dart';
+import '../features/notifications/presentation/pages/notifications_page.dart';
 
 class AppRouter {
   static GoRouter createRouter(AuthCubit authCubit) {
@@ -44,6 +50,27 @@ class AppRouter {
         GoRoute(
           path: '/attendance',
           builder: (context, state) => const AttendancePage(),
+        ),
+        GoRoute(
+          path: '/announcements',
+          builder: (context, state) => const AnnouncementsPage(),
+        ),
+        GoRoute(
+          path: '/announcements/:id',
+          builder: (context, state) {
+            final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+            return BlocProvider(
+              create: (_) => AnnouncementDetailCubit(
+                getIt<AnnouncementRemoteDataSource>(),
+                id,
+              )..load(),
+              child: const AnnouncementDetailPage(),
+            );
+          },
+        ),
+        GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationsPage(),
         ),
       ],
     );
