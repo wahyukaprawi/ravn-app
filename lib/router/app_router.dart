@@ -24,8 +24,16 @@ class AppRouter {
         final isLoggingIn = state.matchedLocation == '/login';
         final isSplash = state.matchedLocation == '/splash';
 
-        if (authState is AuthInitial || authState is AuthLoading) {
+        if (authState is AuthInitial) {
           return isSplash ? null : '/splash';
+        }
+
+        if (authState is AuthLoading) {
+          return null;
+        }
+
+        if (authState is AuthError) {
+          return isLoggingIn ? null : '/login';
         }
 
         if (authState is AuthUnauthenticated) {
