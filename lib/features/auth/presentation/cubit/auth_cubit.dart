@@ -9,9 +9,11 @@ part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final AuthRemoteDataSource remoteDataSource;
-  final FlutterSecureStorage storage = const FlutterSecureStorage();
+  final FlutterSecureStorage storage;
 
-  AuthCubit(this.remoteDataSource) : super(AuthInitial());
+  AuthCubit(this.remoteDataSource, {FlutterSecureStorage? storage})
+    : storage = storage ?? const FlutterSecureStorage(),
+      super(AuthInitial());
 
   Future<void> checkAuth() async {
     try {
@@ -60,18 +62,99 @@ class AuthCubit extends Cubit<AuthState> {
       }
 
       final token = response['token'];
-      if (token != null) {
-        await storage.write(key: 'auth_token', value: token.toString());
-        final user = UserModel.fromJson(
-          response['user'] as Map<String, dynamic>,
-        );
-        emit(AuthAuthenticated(user));
-      } else {
+      final userJson = response['user'];
+
+      if (token == null || userJson is! Map) {
         emit(AuthError('Invalid response'));
+        return;
       }
+
+      await storage.write(key: 'auth_token', value: token.toString());
+      final user = UserModel.fromJson(Map<String, dynamic>.from(userJson));
+
+      if (response['mfa_enrollment_required'] == true) {
+        emit(AuthMfaEnrollmentRequired(user));
+        return;
+      }
+
+      emit(AuthAuthenticated(user));
     } catch (e) {
       emit(AuthError(apiErrorMessage(e)));
     }
+  }
+
+  Future<void> startMfaEnrollment() async {
+    final current = state;
+
+    if (current is! AuthMfaEnrollmentRequired) {
+      return;
+    }
+
+    emit(current.copyWith(isLoading: true, clearError: true));
+
+    try {
+      final response = await remoteDataSource.enrollMfa();
+      emit(
+        current.copyWith(
+          secret: response['secret']?.toString(),
+          otpauthUrl: response['otpauth_url']?.toString(),
+          isLoading: false,
+          clearError: true,
+        ),
+      );
+    } catch (e) {
+      emit(current.copyWith(isLoading: false, error: apiErrorMessage(e)));
+    }
+  }
+
+  Future<void> confirmMfaEnrollment(String code) async {
+    final current = state;
+
+    if (current is! AuthMfaEnrollmentRequired) {
+      return;
+    }
+
+    emit(current.copyWith(isLoading: true, clearError: true));
+
+    try {
+      final response = await remoteDataSource.confirmMfa(code: code);
+      final token = response['token'];
+      final userJson = response['user'];
+
+      if (token == null || userJson is! Map) {
+        emit(
+          current.copyWith(
+            isLoading: false,
+            error: 'The server did not return a complete session.',
+          ),
+        );
+        return;
+      }
+
+      await storage.write(key: 'auth_token', value: token.toString());
+      final user = UserModel.fromJson(Map<String, dynamic>.from(userJson));
+      final recoveryCodes =
+          (response['recovery_codes'] as List?)
+              ?.map((code) => code.toString())
+              .toList() ??
+          const <String>[];
+
+      emit(AuthMfaEnrollmentComplete(user, recoveryCodes));
+    } catch (e) {
+      emit(current.copyWith(isLoading: false, error: apiErrorMessage(e)));
+    }
+  }
+
+  void finishMfaEnrollment() {
+    final current = state;
+
+    if (current is AuthMfaEnrollmentComplete) {
+      emit(AuthAuthenticated(current.user));
+    }
+  }
+
+  Future<void> cancelMfaEnrollment() async {
+    await logout();
   }
 
   Future<void> logout() async {

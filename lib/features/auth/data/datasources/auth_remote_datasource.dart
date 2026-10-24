@@ -33,6 +33,19 @@ class AuthRemoteDataSource {
     }
   }
 
+  Future<Map<String, dynamic>> enrollMfa() async {
+    final response = await dio.post(ApiConstants.mfaEnroll);
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> confirmMfa({required String code}) async {
+    final response = await dio.post(
+      ApiConstants.mfaConfirm,
+      data: {'code': code},
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
   Future<UserModel> getMe() async {
     final response = await dio.get(ApiConstants.me);
     return UserModel.fromJson(response.data as Map<String, dynamic>);

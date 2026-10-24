@@ -10,6 +10,7 @@ import '../features/announcements/presentation/pages/announcement_detail_page.da
 import '../features/announcements/presentation/pages/announcements_page.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/auth/presentation/pages/login_page.dart';
+import '../features/auth/presentation/pages/mfa_enrollment_page.dart';
 import '../features/attendance/presentation/pages/attendance_page.dart';
 import '../features/leave/presentation/pages/leave_home_page.dart';
 import '../features/notifications/presentation/pages/notifications_page.dart';
@@ -23,6 +24,7 @@ class AppRouter {
         final authState = authCubit.state;
         final isLoggingIn = state.matchedLocation == '/login';
         final isSplash = state.matchedLocation == '/splash';
+        final isMfaEnrollment = state.matchedLocation == '/mfa-enroll';
 
         if (authState is AuthInitial) {
           return isSplash ? null : '/splash';
@@ -30,6 +32,11 @@ class AppRouter {
 
         if (authState is AuthLoading) {
           return null;
+        }
+
+        if (authState is AuthMfaEnrollmentRequired ||
+            authState is AuthMfaEnrollmentComplete) {
+          return isMfaEnrollment ? null : '/mfa-enroll';
         }
 
         if (authState is AuthError) {
@@ -41,7 +48,7 @@ class AppRouter {
         }
 
         if (authState is AuthAuthenticated) {
-          if (isLoggingIn || isSplash) {
+          if (isLoggingIn || isSplash || isMfaEnrollment) {
             return '/home';
           }
         }
@@ -54,6 +61,10 @@ class AppRouter {
           builder: (context, state) => const SplashPage(),
         ),
         GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+        GoRoute(
+          path: '/mfa-enroll',
+          builder: (context, state) => const MfaEnrollmentPage(),
+        ),
         GoRoute(
           path: '/home',
           builder: (context, state) => const LeaveHomePage(),
