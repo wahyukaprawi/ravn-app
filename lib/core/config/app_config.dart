@@ -3,10 +3,28 @@ import 'package:flutter/foundation.dart';
 import '../constants/api_constants.dart';
 
 class AppConfig {
-  static String get baseUrl {
-    if (kIsWeb || Platform.isIOS || Platform.isMacOS) {
+  static const String _overrideBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  static String get baseUrl => resolveBaseUrl();
+
+  static String resolveBaseUrl({
+    String? override,
+    bool? isWeb,
+    bool? isIos,
+    bool? isMacOS,
+  }) {
+    final configured = override ?? _overrideBaseUrl;
+
+    if (configured.isNotEmpty) {
+      return configured;
+    }
+
+    if ((isWeb ?? kIsWeb) ||
+        (isIos ?? Platform.isIOS) ||
+        (isMacOS ?? Platform.isMacOS)) {
       return ApiConstants.baseUrlIos;
     }
+
     return ApiConstants.baseUrl;
   }
 
