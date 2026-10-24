@@ -12,8 +12,6 @@ class PushRegistrationService {
   );
 
   Future<bool> registerCurrentDevice() async {
-    if (kIsWeb) return false;
-
     try {
       final token = await pushNotificationService.initializeAndGetToken();
       if (token == null || token.isEmpty) return false;

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import '../constants/api_constants.dart';
 
 class AppConfig {
@@ -7,21 +6,14 @@ class AppConfig {
 
   static String get baseUrl => resolveBaseUrl();
 
-  static String resolveBaseUrl({
-    String? override,
-    bool? isWeb,
-    bool? isIos,
-    bool? isMacOS,
-  }) {
+  static String resolveBaseUrl({String? override, bool? isIos, bool? isMacOS}) {
     final configured = override ?? _overrideBaseUrl;
 
     if (configured.isNotEmpty) {
       return configured;
     }
 
-    if ((isWeb ?? kIsWeb) ||
-        (isIos ?? Platform.isIOS) ||
-        (isMacOS ?? Platform.isMacOS)) {
+    if ((isIos ?? Platform.isIOS) || (isMacOS ?? Platform.isMacOS)) {
       return ApiConstants.baseUrlIos;
     }
 
