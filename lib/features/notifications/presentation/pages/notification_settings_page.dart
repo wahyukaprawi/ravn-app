@@ -19,6 +19,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   NotificationPreferences? _preferences;
   bool _saving = false;
+  String? _error;
 
   @override
   void initState() {
@@ -27,21 +28,44 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   }
 
   Future<void> _load() async {
-    final preferences = await _service.load();
-    if (!mounted) return;
-    setState(() => _preferences = preferences);
+    try {
+      final preferences = await _service.load();
+      if (!mounted) return;
+      setState(() {
+        _preferences = preferences;
+        _error = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _preferences = const NotificationPreferences.defaults();
+        _error =
+            'Preferences could not be loaded on this device. In-app notifications are unaffected.';
+      });
+    }
   }
 
   Future<void> _update(NotificationPreferences preferences) async {
+    final previous = _preferences;
+
     setState(() {
       _preferences = preferences;
       _saving = true;
+      _error = null;
     });
 
-    await _service.save(preferences);
-
-    if (!mounted) return;
-    setState(() => _saving = false);
+    try {
+      await _service.save(preferences);
+      if (!mounted) return;
+      setState(() => _saving = false);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _preferences = previous;
+        _saving = false;
+        _error = 'Preferences could not be saved on this device.';
+      });
+    }
   }
 
   @override
@@ -55,6 +79,20 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
+                if (_error != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: AppColors.danger),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Card(
                   child: Column(
                     children: [
@@ -65,7 +103,9 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                             : (value) => _update(
                                 preferences.copyWith(pushEnabled: value),
                               ),
-                        secondary: const Icon(HeroiconsOutline.devicePhoneMobile),
+                        secondary: const Icon(
+                          HeroiconsOutline.devicePhoneMobile,
+                        ),
                         title: const Text('Push notifications'),
                         subtitle: const Text(
                           'Receive alerts on this device when signed in.',
