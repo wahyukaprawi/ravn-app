@@ -47,6 +47,18 @@ class _LeaveHomePageState extends State<LeaveHomePage>
           MaterialPageRoute(builder: (context) => const ApprovalsPage()),
         );
         return;
+      case 'directory':
+        await context.push('/directory');
+        return;
+      case 'profile':
+        final auth = context.read<AuthCubit>().state;
+        if (auth is AuthAuthenticated && auth.user.employeeId != null) {
+          await context.push('/directory/${auth.user.employeeId}');
+        }
+        return;
+      case 'notificationSettings':
+        await context.push('/notification-settings');
+        return;
       case 'refresh':
         await context.read<LeaveCubit>().loadLeaveData();
         return;
@@ -111,48 +123,90 @@ class _LeaveHomePageState extends State<LeaveHomePage>
             onSelected: (value) {
               _handleMenuAction(value);
             },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 'attendance',
-                child: Row(
-                  children: [
-                    Icon(HeroiconsOutline.clock),
-                    SizedBox(width: 12),
-                    Text('Attendance'),
-                  ],
+            itemBuilder: (context) {
+              final auth = context.read<AuthCubit>().state;
+              final user = auth is AuthAuthenticated ? auth.user : null;
+              final canViewDirectory =
+                  user?.permissions.contains('employees.view_any') ?? false;
+              final canApprove =
+                  user?.permissions.contains('workflow.approve') ?? false;
+
+              return [
+                const PopupMenuItem(
+                  value: 'attendance',
+                  child: Row(
+                    children: [
+                      Icon(HeroiconsOutline.clock),
+                      SizedBox(width: 12),
+                      Text('Attendance'),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: 'approvals',
-                child: Row(
-                  children: [
-                    Icon(HeroiconsOutline.inbox),
-                    SizedBox(width: 12),
-                    Text('Approvals'),
-                  ],
+                if (canApprove)
+                  const PopupMenuItem(
+                    value: 'approvals',
+                    child: Row(
+                      children: [
+                        Icon(HeroiconsOutline.inbox),
+                        SizedBox(width: 12),
+                        Text('Approvals'),
+                      ],
+                    ),
+                  ),
+                if (canViewDirectory)
+                  const PopupMenuItem(
+                    value: 'directory',
+                    child: Row(
+                      children: [
+                        Icon(HeroiconsOutline.users),
+                        SizedBox(width: 12),
+                        Text('People directory'),
+                      ],
+                    ),
+                  ),
+                if (user?.employeeId != null)
+                  const PopupMenuItem(
+                    value: 'profile',
+                    child: Row(
+                      children: [
+                        Icon(HeroiconsOutline.userCircle),
+                        SizedBox(width: 12),
+                        Text('My profile'),
+                      ],
+                    ),
+                  ),
+                const PopupMenuItem(
+                  value: 'notificationSettings',
+                  child: Row(
+                    children: [
+                      Icon(HeroiconsOutline.bellAlert),
+                      SizedBox(width: 12),
+                      Text('Notification settings'),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: 'refresh',
-                child: Row(
-                  children: [
-                    Icon(Icons.refresh),
-                    SizedBox(width: 12),
-                    Text('Refresh'),
-                  ],
+                const PopupMenuItem(
+                  value: 'refresh',
+                  child: Row(
+                    children: [
+                      Icon(Icons.refresh),
+                      SizedBox(width: 12),
+                      Text('Refresh'),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: 'signOut',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout),
-                    SizedBox(width: 12),
-                    Text('Sign out'),
-                  ],
+                const PopupMenuItem(
+                  value: 'signOut',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout),
+                      SizedBox(width: 12),
+                      Text('Sign out'),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ];
+            },
           ),
         ],
         bottom: TabBar(

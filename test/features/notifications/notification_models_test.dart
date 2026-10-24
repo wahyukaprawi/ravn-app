@@ -29,6 +29,24 @@ void main() {
     expect(readNotification.isRead, isTrue);
   });
 
+  test('notification parses leave and attendance deep links', () {
+    final leave = AppNotificationModel.fromJson({
+      'id': 13,
+      'type': 'leave.request.approved',
+      'context': {'leave_request_id': '21'},
+    });
+    final attendance = AppNotificationModel.fromJson({
+      'id': 14,
+      'type': 'attendance.reminder',
+      'context': {'attendance_session_id': 33},
+    });
+
+    expect(leave.leaveRequestId, 21);
+    expect(leave.attendanceSessionId, isNull);
+    expect(attendance.attendanceSessionId, 33);
+    expect(attendance.leaveRequestId, isNull);
+  });
+
   test('notification page parses pagination metadata', () {
     final page = NotificationPage.fromJson({
       'data': [

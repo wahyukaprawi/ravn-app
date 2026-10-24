@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/di/injection.dart';
@@ -14,6 +16,7 @@ import 'features/attendance/presentation/cubit/attendance_cubit.dart';
 import 'features/announcements/data/datasources/announcement_remote_datasource.dart';
 import 'features/announcements/presentation/cubit/announcement_cubit.dart';
 import 'features/notifications/data/datasources/notification_remote_datasource.dart';
+import 'features/notifications/domain/push_registration_service.dart';
 import 'features/notifications/presentation/cubit/notification_cubit.dart';
 import 'router/app_router.dart';
 
@@ -62,6 +65,12 @@ class MyApp extends StatelessWidget {
           final router = AppRouter.createRouter(context.read<AuthCubit>());
           return BlocListener<AuthCubit, AuthState>(
             listener: (context, state) {
+              if (state is AuthAuthenticated) {
+                unawaited(
+                  getIt<PushRegistrationService>().registerCurrentDevice(),
+                );
+              }
+
               if (state is AuthUnauthenticated) {
                 context.read<AnnouncementCubit>().clear();
                 context.read<NotificationCubit>().clear();

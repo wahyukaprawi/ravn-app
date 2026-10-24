@@ -26,6 +26,8 @@ class ApiConstants {
 
   static const String announcements = '/announcements';
   static const String notifications = '/notifications';
+  static const String devices = '/devices';
+  static const String employees = '/employees';
 
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);

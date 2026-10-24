@@ -8,6 +8,8 @@ class UserModel {
   final String name;
   final String email;
   final String status;
+  @JsonKey(name: 'employee_id')
+  final int? employeeId;
   @JsonKey(name: 'last_login_at')
   final String? lastLoginAt;
   final List<String> roles;
@@ -18,6 +20,7 @@ class UserModel {
     required this.name,
     required this.email,
     required this.status,
+    this.employeeId,
     this.lastLoginAt,
     required this.roles,
     required this.permissions,

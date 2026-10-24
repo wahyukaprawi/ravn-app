@@ -26,6 +26,17 @@ class AppNotificationModel {
     return int.tryParse(value?.toString() ?? '');
   }
 
+  int? get leaveRequestId => _contextId('leave_request_id');
+
+  int? get attendanceSessionId => _contextId('attendance_session_id');
+
+  int? _contextId(String key) {
+    final value = context[key];
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
+  }
+
   factory AppNotificationModel.fromJson(Map<String, dynamic> json) {
     final context = json['context'];
 

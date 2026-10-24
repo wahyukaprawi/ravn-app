@@ -12,7 +12,13 @@ import '../features/auth/presentation/cubit/auth_cubit.dart';
 import '../features/auth/presentation/pages/login_page.dart';
 import '../features/auth/presentation/pages/mfa_enrollment_page.dart';
 import '../features/attendance/presentation/pages/attendance_page.dart';
+import '../features/employees/data/datasources/employee_remote_datasource.dart';
+import '../features/employees/presentation/cubit/employee_directory_cubit.dart';
+import '../features/employees/presentation/cubit/employee_profile_cubit.dart';
+import '../features/employees/presentation/pages/employee_directory_page.dart';
+import '../features/employees/presentation/pages/employee_profile_page.dart';
 import '../features/leave/presentation/pages/leave_home_page.dart';
+import '../features/notifications/presentation/pages/notification_settings_page.dart';
 import '../features/notifications/presentation/pages/notifications_page.dart';
 
 class AppRouter {
@@ -93,6 +99,31 @@ class AppRouter {
         GoRoute(
           path: '/notifications',
           builder: (context, state) => const NotificationsPage(),
+        ),
+        GoRoute(
+          path: '/notification-settings',
+          builder: (context, state) => const NotificationSettingsPage(),
+        ),
+        GoRoute(
+          path: '/directory',
+          builder: (context, state) => BlocProvider(
+            create: (_) =>
+                EmployeeDirectoryCubit(getIt<EmployeeRemoteDataSource>())
+                  ..load(),
+            child: const EmployeeDirectoryPage(),
+          ),
+        ),
+        GoRoute(
+          path: '/directory/:id',
+          builder: (context, state) {
+            final id = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+            return BlocProvider(
+              create: (_) =>
+                  EmployeeProfileCubit(getIt<EmployeeRemoteDataSource>(), id)
+                    ..load(),
+              child: const EmployeeProfilePage(),
+            );
+          },
         ),
       ],
     );

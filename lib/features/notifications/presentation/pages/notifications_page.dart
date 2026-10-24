@@ -38,6 +38,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
         appBar: AppBar(
           title: const Text('Notifications'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              tooltip: 'Notification settings',
+              onPressed: () => context.push('/notification-settings'),
+            ),
             BlocBuilder<NotificationCubit, NotificationState>(
               builder: (context, state) {
                 final unread = state is NotificationLoaded
@@ -186,6 +191,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
     if (announcementId != null) {
       await context.push('/announcements/$announcementId');
+      return;
+    }
+
+    if (notification.leaveRequestId != null) {
+      await context.push('/home');
+      return;
+    }
+
+    if (notification.attendanceSessionId != null) {
+      await context.push('/attendance');
       return;
     }
 
