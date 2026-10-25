@@ -8,8 +8,10 @@ void main() {
   test('logout revokes the push device before clearing the session', () async {
     final storage = _MemoryStorage();
     storage.values['auth_token'] = 'session-token';
-    final remote = _FakeAuthRemoteDataSource();
     final events = <String>[];
+    final remote = _FakeAuthRemoteDataSource(
+      onLogout: () => events.add('remote'),
+    );
     final cubit = AuthCubit(
       remote,
       storage: storage,
@@ -18,7 +20,7 @@ void main() {
 
     await cubit.logout();
 
-    expect(events, ['push']);
+    expect(events, ['push', 'remote']);
     expect(remote.logoutCalls, 1);
     expect(storage.values.containsKey('auth_token'), isFalse);
     expect(cubit.state, isA<AuthUnauthenticated>());
@@ -67,8 +69,9 @@ void main() {
 }
 
 class _FakeAuthRemoteDataSource extends AuthRemoteDataSource {
-  _FakeAuthRemoteDataSource() : super(Dio());
+  _FakeAuthRemoteDataSource({this.onLogout}) : super(Dio());
 
+  final void Function()? onLogout;
   int loginCalls = 0;
   int enrollCalls = 0;
   int confirmCalls = 0;
@@ -116,6 +119,7 @@ class _FakeAuthRemoteDataSource extends AuthRemoteDataSource {
   @override
   Future<void> logout() async {
     logoutCalls++;
+    onLogout?.call();
   }
 }
 
