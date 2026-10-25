@@ -12,6 +12,7 @@ class AppTheme {
         error: AppColors.danger,
         onPrimary: AppColors.text,
         onSurface: AppColors.text,
+        inversePrimary: AppColors.background,
       ),
       scaffoldBackgroundColor: AppColors.background,
       appBarTheme: const AppBarTheme(
