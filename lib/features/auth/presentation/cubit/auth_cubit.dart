@@ -10,10 +10,14 @@ part 'auth_state.dart';
 class AuthCubit extends Cubit<AuthState> {
   final AuthRemoteDataSource remoteDataSource;
   final FlutterSecureStorage storage;
+  final Future<void> Function()? onBeforeLogout;
 
-  AuthCubit(this.remoteDataSource, {FlutterSecureStorage? storage})
-    : storage = storage ?? const FlutterSecureStorage(),
-      super(AuthInitial());
+  AuthCubit(
+    this.remoteDataSource, {
+    FlutterSecureStorage? storage,
+    this.onBeforeLogout,
+  }) : storage = storage ?? const FlutterSecureStorage(),
+       super(AuthInitial());
 
   Future<void> checkAuth() async {
     try {
@@ -158,6 +162,9 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
+    try {
+      await onBeforeLogout?.call();
+    } catch (_) {}
     try {
       await remoteDataSource.logout();
     } catch (_) {}

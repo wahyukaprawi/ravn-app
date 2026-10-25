@@ -31,6 +31,14 @@ class NotificationRemoteDataSource {
     return page.total;
   }
 
+  Future<AppNotificationModel> getNotification(int id) async {
+    final response = await dio.get('${ApiConstants.notifications}/$id');
+
+    return NotificationResponse.fromJson(
+      Map<String, dynamic>.from(response.data as Map),
+    ).notification;
+  }
+
   Future<AppNotificationModel> markRead(int id) async {
     final response = await dio.post('${ApiConstants.notifications}/$id/read');
 

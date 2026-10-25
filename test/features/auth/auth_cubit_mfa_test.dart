@@ -5,6 +5,27 @@ import 'package:ravn/features/auth/data/datasources/auth_remote_datasource.dart'
 import 'package:ravn/features/auth/presentation/cubit/auth_cubit.dart';
 
 void main() {
+  test('logout revokes the push device before clearing the session', () async {
+    final storage = _MemoryStorage();
+    storage.values['auth_token'] = 'session-token';
+    final remote = _FakeAuthRemoteDataSource();
+    final events = <String>[];
+    final cubit = AuthCubit(
+      remote,
+      storage: storage,
+      onBeforeLogout: () async => events.add('push'),
+    );
+
+    await cubit.logout();
+
+    expect(events, ['push']);
+    expect(remote.logoutCalls, 1);
+    expect(storage.values.containsKey('auth_token'), isFalse);
+    expect(cubit.state, isA<AuthUnauthenticated>());
+
+    await cubit.close();
+  });
+
   test(
     'an unenrolled admin completes MFA enrollment and receives a session',
     () async {
@@ -51,6 +72,7 @@ class _FakeAuthRemoteDataSource extends AuthRemoteDataSource {
   int loginCalls = 0;
   int enrollCalls = 0;
   int confirmCalls = 0;
+  int logoutCalls = 0;
 
   @override
   Future<Map<String, dynamic>> login({
@@ -92,7 +114,9 @@ class _FakeAuthRemoteDataSource extends AuthRemoteDataSource {
   }
 
   @override
-  Future<void> logout() async {}
+  Future<void> logout() async {
+    logoutCalls++;
+  }
 }
 
 class _MemoryStorage extends FlutterSecureStorage {

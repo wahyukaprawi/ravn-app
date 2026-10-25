@@ -12,6 +12,7 @@ import '../../features/leave/data/datasources/leave_remote_datasource.dart';
 import '../../features/notifications/data/datasources/device_remote_datasource.dart';
 import '../../features/notifications/data/datasources/notification_remote_datasource.dart';
 import '../../features/notifications/data/notification_preferences_service.dart';
+import '../../features/notifications/data/services/firebase_push_notification_service.dart';
 import '../../features/notifications/domain/push_notification_service.dart';
 import '../../features/notifications/domain/push_registration_service.dart';
 
@@ -45,12 +46,13 @@ Future<void> configureDependencies() async {
     () => NotificationPreferencesService(),
   );
   getIt.registerLazySingleton<PushNotificationService>(
-    () => NoopPushNotificationService(),
+    () => FirebasePushNotificationService(),
   );
   getIt.registerLazySingleton<PushRegistrationService>(
     () => PushRegistrationService(
       getIt<PushNotificationService>(),
       getIt<DeviceRemoteDataSource>(),
+      deviceIdentityService: getIt<DeviceIdentityService>(),
     ),
   );
   getIt.registerLazySingleton<AttendanceLocationService>(

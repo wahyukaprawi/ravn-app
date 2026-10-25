@@ -16,13 +16,20 @@ import 'features/attendance/presentation/cubit/attendance_cubit.dart';
 import 'features/announcements/data/datasources/announcement_remote_datasource.dart';
 import 'features/announcements/presentation/cubit/announcement_cubit.dart';
 import 'features/notifications/data/datasources/notification_remote_datasource.dart';
+import 'features/notifications/domain/push_notification_service.dart';
 import 'features/notifications/domain/push_registration_service.dart';
 import 'features/notifications/presentation/cubit/notification_cubit.dart';
+import 'features/notifications/presentation/push_notification_listener.dart';
 import 'router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await configureDependencies();
+  try {
+    await getIt<PushNotificationService>().initialize();
+  } catch (error) {
+    debugPrint('Push initialization failed: $error');
+  }
   runApp(const MyApp());
 }
 
@@ -37,7 +44,10 @@ class MyApp extends StatelessWidget {
     final announcementDataSource = getIt<AnnouncementRemoteDataSource>();
     final notificationDataSource = getIt<NotificationRemoteDataSource>();
 
-    final authCubit = AuthCubit(authDataSource);
+    final authCubit = AuthCubit(
+      authDataSource,
+      onBeforeLogout: getIt<PushRegistrationService>().unregisterCurrentDevice,
+    );
 
     return MultiBlocProvider(
       providers: [
@@ -81,6 +91,13 @@ class MyApp extends StatelessWidget {
               theme: AppTheme.lightTheme,
               routerConfig: router,
               debugShowCheckedModeBanner: false,
+              builder: (context, child) => PushNotificationListener(
+                router: router,
+                authCubit: authCubit,
+                notifications: notificationDataSource,
+                pushNotificationService: getIt<PushNotificationService>(),
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           );
         },

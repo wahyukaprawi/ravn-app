@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "67582755581",
+    "project_id": "ravn-app-200d4",
+    "storage_bucket": "ravn-app-200d4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:67582755581:android:b5c983780dd2369c27b494",
+        "android_client_info": {
+          "package_name": "com.ravenclawcode.ravn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDguptvE6vdU4Zn9_7m28xh6uUvJ3tqDn8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

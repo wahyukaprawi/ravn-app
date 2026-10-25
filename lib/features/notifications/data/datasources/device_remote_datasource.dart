@@ -6,12 +6,12 @@ class DeviceRemoteDataSource {
 
   DeviceRemoteDataSource(this.dio);
 
-  Future<void> registerToken({
+  Future<int?> registerToken({
     required String token,
     required String platform,
     String? deviceId,
   }) async {
-    await dio.post(
+    final response = await dio.post(
       ApiConstants.devices,
       data: {
         'token': token,
@@ -19,9 +19,23 @@ class DeviceRemoteDataSource {
         if (deviceId != null) 'device_id': deviceId,
       },
     );
+
+    final body = response.data;
+    if (body is! Map) return null;
+
+    final data = body['data'];
+    if (data is! Map) return null;
+
+    return _asInt(data['id']);
   }
 
   Future<void> revokeToken(int deviceId) async {
     await dio.delete('${ApiConstants.devices}/$deviceId');
   }
+}
+
+int? _asInt(Object? value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '');
 }
