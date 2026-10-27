@@ -11,8 +11,10 @@ class PushRegistrationService {
   final DeviceRemoteDataSource deviceRemoteDataSource;
   final DeviceIdentityService? deviceIdentityService;
 
-  StreamSubscription<String>? _tokenRefreshSubscription;
-  bool _tokenRefreshListening = false;
+  StreamSubscription<String>? _registrationRefreshSubscription;
+  bool _registrationRefreshListening = false;
+  bool _acceptRegistrations = false;
+  int _registrationGeneration = 0;
   int? _registeredDeviceId;
 
   PushRegistrationService(
@@ -22,43 +24,62 @@ class PushRegistrationService {
   });
 
   Future<bool> registerCurrentDevice() async {
-    _startTokenRefreshRegistration();
+    final generation = ++_registrationGeneration;
 
     try {
-      final token = await pushNotificationService.initializeAndGetToken();
-      if (token == null || token.isEmpty) return false;
+      final registrationId = await pushNotificationService
+          .initializeAndGetRegistrationId();
 
-      return await _registerToken(token);
+      if (!_isCurrentGeneration(generation)) return false;
+
+      if (registrationId == null || registrationId.isEmpty) {
+        return false;
+      }
+
+      _acceptRegistrations = true;
+      _startRegistrationRefreshRegistration();
+
+      return await _registerRegistrationId(registrationId, generation);
     } catch (error) {
       debugPrint('Push registration failed: $error');
       return false;
     }
   }
 
-  void _startTokenRefreshRegistration() {
-    if (_tokenRefreshListening) return;
+  void _startRegistrationRefreshRegistration() {
+    if (_registrationRefreshListening) return;
 
-    _tokenRefreshListening = true;
-    _tokenRefreshSubscription = pushNotificationService.tokenRefreshes.listen(
-      _handleTokenRefresh,
+    _registrationRefreshListening = true;
+    _registrationRefreshSubscription = pushNotificationService
+        .registrationRefreshes
+        .listen(_handleRegistrationRefresh);
+  }
+
+  void _handleRegistrationRefresh(String registrationId) {
+    if (!_acceptRegistrations || registrationId.isEmpty) return;
+    unawaited(
+      _registerRegistrationIdSafely(registrationId, _registrationGeneration),
     );
   }
 
-  void _handleTokenRefresh(String token) {
-    if (token.isEmpty) return;
-    unawaited(_registerTokenSafely(token));
-  }
-
-  Future<bool> _registerTokenSafely(String token) async {
+  Future<bool> _registerRegistrationIdSafely(
+    String registrationId,
+    int generation,
+  ) async {
     try {
-      return await _registerToken(token);
+      return await _registerRegistrationId(registrationId, generation);
     } catch (error) {
-      debugPrint('Push token refresh registration failed: $error');
+      debugPrint('Push registration refresh failed: $error');
       return false;
     }
   }
 
-  Future<bool> _registerToken(String token) async {
+  Future<bool> _registerRegistrationId(
+    String registrationId,
+    int generation,
+  ) async {
+    if (!_isActive(generation)) return false;
+
     final platform = switch (defaultTargetPlatform) {
       TargetPlatform.iOS => 'ios',
       TargetPlatform.android => 'android',
@@ -73,38 +94,72 @@ class PushRegistrationService {
       debugPrint('Push device identity failed: $error');
     }
 
-    final registeredId = await deviceRemoteDataSource.registerToken(
-      token: token,
+    if (!_isActive(generation)) return false;
+
+    final registeredId = await deviceRemoteDataSource.registerDevice(
+      registrationId: registrationId,
       platform: platform,
       deviceId: deviceId,
     );
+
+    if (!_isActive(generation)) {
+      await _revokeQuietly(registeredId);
+      return false;
+    }
+
     _registeredDeviceId = registeredId ?? _registeredDeviceId;
 
     return true;
   }
 
   Future<void> unregisterCurrentDevice() async {
-    await _stopTokenRefreshRegistration();
+    _registrationGeneration++;
+    _acceptRegistrations = false;
+    await _stopRegistrationRefreshRegistration();
 
     final deviceId = _registeredDeviceId;
-    if (deviceId == null) return;
+    _registeredDeviceId = null;
 
     try {
-      await deviceRemoteDataSource.revokeToken(deviceId);
+      if (deviceId != null) {
+        await deviceRemoteDataSource.revokeDevice(deviceId);
+      }
     } catch (error) {
       debugPrint('Push device revocation failed: $error');
-    } finally {
-      _registeredDeviceId = null;
+    }
+
+    try {
+      await pushNotificationService.unregister();
+    } catch (error) {
+      debugPrint('Push provider unregistration failed: $error');
     }
   }
 
   Future<void> dispose() async {
-    await _stopTokenRefreshRegistration();
+    _registrationGeneration++;
+    _acceptRegistrations = false;
+    await _stopRegistrationRefreshRegistration();
   }
 
-  Future<void> _stopTokenRefreshRegistration() async {
-    await _tokenRefreshSubscription?.cancel();
-    _tokenRefreshSubscription = null;
-    _tokenRefreshListening = false;
+  Future<void> _stopRegistrationRefreshRegistration() async {
+    await _registrationRefreshSubscription?.cancel();
+    _registrationRefreshSubscription = null;
+    _registrationRefreshListening = false;
   }
+
+  Future<void> _revokeQuietly(int? deviceId) async {
+    if (deviceId == null) return;
+
+    try {
+      await deviceRemoteDataSource.revokeDevice(deviceId);
+    } catch (error) {
+      debugPrint('Push device cleanup failed: $error');
+    }
+  }
+
+  bool _isCurrentGeneration(int generation) =>
+      generation == _registrationGeneration;
+
+  bool _isActive(int generation) =>
+      _acceptRegistrations && _isCurrentGeneration(generation);
 }

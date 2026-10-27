@@ -10,12 +10,13 @@ import '../../domain/push_notification_service.dart';
 class FirebasePushNotificationService implements PushNotificationService {
   final StreamController<PushMessage> _messages =
       StreamController<PushMessage>.broadcast();
-  final StreamController<String> _tokenRefreshes =
+  final StreamController<String> _registrationRefreshes =
       StreamController<String>.broadcast();
   final List<StreamSubscription<Object?>> _subscriptions = [];
 
   Future<void>? _initializing;
   bool _initialized = false;
+  String? _latestRegistrationId;
 
   bool get _isSupported =>
       !kIsWeb &&
@@ -46,7 +47,12 @@ class FirebasePushNotificationService implements PushNotificationService {
         );
       }
 
-      _subscriptions.add(messaging.onTokenRefresh.listen(_tokenRefreshes.add));
+      _subscriptions.add(
+        messaging.onRegistered.listen((registrationId) {
+          _latestRegistrationId = registrationId;
+          _registrationRefreshes.add(registrationId);
+        }),
+      );
       _subscriptions.add(
         FirebaseMessaging.onMessage.listen(
           (message) => _messages.add(
@@ -73,7 +79,7 @@ class FirebasePushNotificationService implements PushNotificationService {
   }
 
   @override
-  Future<String?> initializeAndGetToken() async {
+  Future<String?> initializeAndGetRegistrationId() async {
     await initialize();
 
     if (!_initialized) return null;
@@ -89,10 +95,43 @@ class FirebasePushNotificationService implements PushNotificationService {
         return null;
       }
 
-      return await FirebaseMessaging.instance.getToken();
+      return await _registerForMessages();
     } catch (error) {
-      debugPrint('Firebase push token request failed: $error');
+      debugPrint('Firebase push registration failed: $error');
       return null;
+    }
+  }
+
+  Future<String?> _registerForMessages() async {
+    final messaging = FirebaseMessaging.instance;
+    final registration = Completer<String?>();
+    late final StreamSubscription<String> subscription;
+
+    subscription = messaging.onRegistered.listen((registrationId) {
+      if (registrationId.isEmpty || registration.isCompleted) return;
+      registration.complete(registrationId);
+    });
+
+    try {
+      await messaging.register();
+      return await registration.future.timeout(
+        const Duration(seconds: 20),
+        onTimeout: () => _latestRegistrationId,
+      );
+    } finally {
+      await subscription.cancel();
+    }
+  }
+
+  @override
+  Future<void> unregister() async {
+    if (!_initialized) return;
+
+    try {
+      await FirebaseMessaging.instance.unregister();
+      _latestRegistrationId = null;
+    } catch (error) {
+      debugPrint('Firebase push unregistration failed: $error');
     }
   }
 
@@ -112,7 +151,7 @@ class FirebasePushNotificationService implements PushNotificationService {
   }
 
   @override
-  Stream<String> get tokenRefreshes => _tokenRefreshes.stream;
+  Stream<String> get registrationRefreshes => _registrationRefreshes.stream;
 
   @override
   Stream<PushMessage> get messages => _messages.stream;
@@ -137,8 +176,9 @@ class FirebasePushNotificationService implements PushNotificationService {
     _subscriptions.clear();
 
     await _messages.close();
-    await _tokenRefreshes.close();
+    await _registrationRefreshes.close();
     _initialized = false;
     _initializing = null;
+    _latestRegistrationId = null;
   }
 }

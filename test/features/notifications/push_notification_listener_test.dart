@@ -266,16 +266,19 @@ class _FakePushNotificationService implements PushNotificationService {
   Future<void> initialize() async {}
 
   @override
-  Future<String?> initializeAndGetToken() async => null;
+  Future<String?> initializeAndGetRegistrationId() async => null;
 
   @override
   Future<PushMessage?> getInitialMessage() async => initialMessage;
 
   @override
-  Stream<String> get tokenRefreshes => const Stream.empty();
+  Stream<String> get registrationRefreshes => const Stream.empty();
 
   @override
   Stream<PushMessage> get messages => messageController.stream;
+
+  @override
+  Future<void> unregister() async {}
 
   @override
   Future<void> dispose() async {
