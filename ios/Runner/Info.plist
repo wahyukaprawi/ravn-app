@@ -51,6 +51,8 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Ravn uses the front camera for attendance face liveness verification.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Ravn uses your location only to validate attendance at your assigned work location.</string>
 	<key>NSAppTransportSecurity</key>

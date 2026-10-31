@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../data/models/attendance_models.dart';
 import '../cubit/attendance_cubit.dart';
+import 'face_liveness_page.dart';
 
 class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
@@ -87,24 +87,6 @@ class _AttendancePageState extends State<AttendancePage> {
       padding: const EdgeInsets.all(16),
       children: [
         _statusCard(state),
-        if (!AppConfig.syntheticFaceVerification) ...[
-          const SizedBox(height: 12),
-          _InfoBanner(
-            icon: Icons.face_retouching_off_outlined,
-            color: AppColors.warning,
-            message:
-                'On-device face verification is not configured in this build. Check-in and check-out remain disabled until the face engine is integrated.',
-          ),
-        ],
-        if (AppConfig.syntheticFaceVerification) ...[
-          const SizedBox(height: 12),
-          _InfoBanner(
-            icon: Icons.science_outlined,
-            color: AppColors.warning,
-            message:
-                'Development mode: face verification is synthetic. Do not use this build for production attendance.',
-          ),
-        ],
         if (session != null) ...[
           const SizedBox(height: 16),
           _eventsCard(session),
@@ -313,7 +295,14 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   bool _canPunch(AttendanceLoaded state) {
-    return !state.isPunching && AppConfig.syntheticFaceVerification;
+    return !state.isPunching;
+  }
+
+  Future<bool> _verifyFace(String challengeId) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (context) => const FaceLivenessPage()),
+    );
+    return result == true;
   }
 
   Future<void> _confirmPunch(bool checkIn) async {
@@ -323,8 +312,8 @@ class _AttendancePageState extends State<AttendancePage> {
         title: Text(checkIn ? 'Check in?' : 'Check out?'),
         content: Text(
           checkIn
-              ? 'Ravn will capture your current location and request face verification before recording check-in.'
-              : 'Ravn will capture your current location and request face verification before recording check-out.',
+              ? 'Ravn will capture your current location and run on-device face liveness before recording check-in.'
+              : 'Ravn will capture your current location and run on-device face liveness before recording check-out.',
         ),
         actions: [
           TextButton(
@@ -340,7 +329,10 @@ class _AttendancePageState extends State<AttendancePage> {
     );
 
     if (confirmed != true || !mounted) return;
-    await context.read<AttendanceCubit>().punch(checkIn: checkIn);
+    await context.read<AttendanceCubit>().punch(
+      checkIn: checkIn,
+      verifyFace: _verifyFace,
+    );
   }
 
   String _windowLabel(
@@ -451,43 +443,6 @@ class _InfoRow extends StatelessWidget {
           Icon(icon, size: 18, color: AppColors.textMuted),
           const SizedBox(width: 8),
           Expanded(child: Text(label)),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoBanner extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String message;
-
-  const _InfoBanner({
-    required this.icon,
-    required this.color,
-    required this.message,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(color: color, fontSize: 12),
-            ),
-          ),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:heroicons_flutter/heroicons_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/number_format.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../notifications/presentation/cubit/notification_cubit.dart';
@@ -326,7 +327,7 @@ class _LeaveHomePageState extends State<LeaveHomePage>
               children: [
                 const SizedBox(height: 8),
                 Text(
-                  '${request.startDate} to ${request.endDate} • ${request.days} day(s)',
+                  '${request.startDate} to ${request.endDate} • ${formatWholeNumber(request.days)} day(s)',
                 ),
                 if (request.reason != null && request.reason!.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -424,7 +425,7 @@ class _LeaveHomePageState extends State<LeaveHomePage>
     return Column(
       children: [
         Text(
-          value.toStringAsFixed(2),
+          formatWholeNumber(value),
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -488,7 +489,7 @@ class _LeaveHomePageState extends State<LeaveHomePage>
               children: [
                 const SizedBox(height: 8),
                 Text(
-                  '${request.startDate} to ${request.endDate} • ${request.days} day(s)',
+                  '${request.startDate} to ${request.endDate} • ${formatWholeNumber(request.days)} day(s)',
                 ),
               ],
             ),

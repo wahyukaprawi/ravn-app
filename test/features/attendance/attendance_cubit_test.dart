@@ -50,7 +50,7 @@ void main() {
       expect(remote.checkInCalls, 0);
       expect(loaded.isPunching, isFalse);
       expect(loaded.noticeIsError, isTrue);
-      expect(loaded.notice, contains('Face verification is not configured'));
+      expect(loaded.notice, contains('Face verification was not completed'));
 
       await cubit.close();
     });

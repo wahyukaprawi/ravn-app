@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/number_format.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../data/models/leave_models.dart';
 import '../cubit/leave_cubit.dart';
@@ -29,7 +30,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
         ),
         content: Text(
           '${request.employee.name} · ${request.leaveType?.name ?? 'Leave'}\n'
-          '${request.startDate} to ${request.endDate} (${request.days} day(s))',
+          '${request.startDate} to ${request.endDate} (${formatWholeNumber(request.days)} day(s))',
         ),
         actions: [
           TextButton(
@@ -259,7 +260,7 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
                   style: TextStyle(color: AppColors.textMuted),
                 ),
                 Text(
-                  '${request.days} day(s)',
+                  '${formatWholeNumber(request.days)} day(s)',
                   style: TextStyle(color: AppColors.textMuted),
                 ),
                 if (request.reason != null && request.reason!.isNotEmpty) ...[
