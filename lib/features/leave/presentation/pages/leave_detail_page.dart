@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/number_format.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../data/models/leave_models.dart';
@@ -42,7 +43,7 @@ class LeaveDetailPage extends StatelessWidget {
                     const SizedBox(height: 16),
                     _buildRow('Start Date', request.startDate),
                     _buildRow('End Date', request.endDate),
-                    _buildRow('Days', request.days.toString()),
+                    _buildRow('Days', formatWholeNumber(request.days)),
                     if (request.manager != null)
                       _buildRow('Manager', request.manager!.name),
                     if (request.reason != null &&

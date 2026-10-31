@@ -40,7 +40,10 @@ class AttendanceCubit extends Cubit<AttendanceState> {
     }
   }
 
-  Future<void> punch({required bool checkIn}) async {
+  Future<void> punch({
+    required bool checkIn,
+    Future<bool> Function(String challengeId)? verifyFace,
+  }) async {
     final current = state;
     if (current is! AttendanceLoaded || current.isPunching) return;
 
@@ -59,13 +62,15 @@ class AttendanceCubit extends Cubit<AttendanceState> {
         throw StateError('The server did not return a face challenge.');
       }
 
-      final verified = await faceVerificationService.verify(challengeId);
+      final verified = verifyFace == null
+          ? await faceVerificationService.verify(challengeId)
+          : await verifyFace(challengeId);
       if (!verified) {
         emit(
           current.copyWith(
             isPunching: false,
             notice:
-                'Face verification is not configured in this build. Check-in is disabled until the on-device engine is integrated.',
+                'Face verification was not completed. Keep one face in frame and try again.',
             noticeIsError: true,
           ),
         );
